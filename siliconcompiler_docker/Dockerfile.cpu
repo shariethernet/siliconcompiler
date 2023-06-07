@@ -1,0 +1,137 @@
+
+FROM ubuntu:22.04
+ENV TZ=Etc/UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+
+WORKDIR /workspace
+
+ARG GID
+ARG GNAME
+ARG UNAME
+ARG UID
+
+RUN apt-get -qq update && apt-get -qq -y install software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get -qq update && \
+    apt-get install -y python3.8 python3.8-dev python3.8-venv python3-pip && \
+    apt-get autoclean && \
+    rm -rf /var/lib/apt/lists/* /var/log/dpkg.log
+# Install conda system prerequisites, commands based on: https://github.com/conda/conda-docker/blob/master/miniconda3/debian/Dockerfile
+RUN apt-get -qq update && apt-get -qq -y install curl pkg-config bzip2 ninja-build tclsh swig uuid-dev libgoogle-perftools-dev python3 python3-orderedmultidict python3-psutil default-jre lcov zlib1g-dev \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /var/log/dpkg.log
+
+# Install Silicon Compiler system prerequisites
+RUN apt-get -qq update && apt-get -qq -y install verilator build-essential cmake libx11-6 git flex bison python3-pip\
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /var/log/dpkg.log
+
+# Adding LogicNets dependency on OHMYXILINX
+#RUN git clone https://bitbucket.org/maltanar/oh-my-xilinx.git
+#ENV OHMYXILINX=/workspace/oh-my-xilinx
+
+
+
+# Create the user account to run LogicNets
+# RUN groupadd -g $GID $GNAME
+# RUN useradd -m -u $UID $UNAME -g $GNAME
+ENV UNAME_HOME=/home/$UNAME
+USER $UNAME
+ENV USER=$UNAME
+ENV HOME=/home/$UNAME
+
+# Install conda
+# ENV CONDA_ROOT=$HOME/.local/miniconda3
+# RUN mkdir -p $CONDA_ROOT
+# ENV PATH=$CONDA_ROOT/bin:$PATH
+# RUN curl -sSL https://repo.anaconda.com/miniconda/Miniconda3-py38_4.12.0-Linux-x86_64.sh -o /tmp/miniconda.sh \
+#     && bash /tmp/miniconda.sh -bfp $CONDA_ROOT \
+#     && rm -rf /tmp/miniconda.sh \
+#     && conda install -y python=3.8 pip\
+#     && conda update -y conda \
+#     && conda clean --all --yes
+# ENV PATH=/home/.local/miniconda3/bin:$PATH
+
+RUN python3 -m pip install orderedmultidict
+RUN git clone https://github.com/alainmarcel/Surelog.git
+ENV SURELOG=/workspace/Surelog
+RUN cd Surelog && \
+    git submodule update --init --recursive && \
+    make && \
+    make install 
+
+RUN apt-get -qq update && apt-get -qq -y install wget \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /var/log/dpkg.log
+# Install Tabby CAD Suite
+RUN ["/bin/bash", "-c","wget https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2023-05-08/oss-cad-suite-linux-x64-20230508.tgz"]
+RUN ["/bin/bash", "-c","tar -xzf oss-cad-suite-linux-x64-20230508.tgz"] 
+ENV PATH=/workspace/oss-cad-suite/bin:$PATH
+
+# Install Bluespec
+RUN apt-get -qq update && apt-get -qq -y install ghc libghc-regex-compat-dev \
+            libghc-syb-dev \
+            libghc-old-time-dev \ 
+            libghc-split-dev \
+            tcl-dev \
+            autoconf \
+            gperf \
+            iverilog \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-font-utils \
+            texlive-fonts-extra
+
+RUN git clone --recursive https://github.com/B-Lang-org/bsc && cd bsc && \
+    make install-src
+
+ENV BSC_INST=/workspace/bsc/inst
+
+RUN BSC_VERSION=$(echo 'puts [lindex [Bluetcl::version] 0]' | /workspace/bsc/inst/bin/bluetcl) && \
+    mkdir -p /opt/tools/bsc && \
+    mv $BSC_INST /opt/tools/bsc/bsc-${BSC_VERSION} && \
+    cd /opt/tools/bsc && \
+    ln -s bsc-${BSC_VERSION} latest
+ENV PATH=/opt/tools/bsc/latest/bin:$PATH
+
+# Install sandpiper-saas
+RUN python3 -m pip install sandpiper-saas
+
+#Install OpenROAD
+RUN apt-get -qq update && apt-get -qq -y install sudo qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+COPY siliconcompiler_docker/OpenROAD-flow-scripts /workspace/OpenROAD-flow-scripts
+RUN cd OpenROAD-flow-scripts && ./setup.sh 
+RUN cd OpenROAD-flow-scripts && ./build_openroad.sh --local
+RUN cd OpenROAD-flow-scripts && ./env.sh
+ENV PATH=/workspace/OpenROAD-flow-scripts/tools/install/OpenROAD/bin:$PATH
+
+#Install Klayout
+RUN wget https://www.klayout.org/downloads/Ubuntu-22/klayout_0.28.7-1_amd64.deb
+RUN apt install ./klayout_0.28.7-1_amd64.deb
+
+RUN apt-get -qq update && apt-get -qq -y install python-is-python3 
+RUN python3 -m pip install Cython
+
+COPY requirements.txt /workspace
+RUN python3 -m pip install -r requirements.txt
+# Add entry point script to install LogicNets and setup vivado.
+ENV QT_QPA_PLATFORM=offscreen
+RUN apt-get clean && apt-get update && apt-get install -y locales
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+RUN mkdir -p /workspace/setup_scripts
+
+
+ENV LOCAL_PATH=$HOME/.local/bin
+RUN mkdir -p $LOCAL_PATH
+COPY siliconcompiler_docker/entry-point.sh $LOCAL_PATH
+ENV PATH=$LOCAL_PATH:$PATH
+ENTRYPOINT ["entry-point.sh"]
+CMD ["bash"]
+
+
