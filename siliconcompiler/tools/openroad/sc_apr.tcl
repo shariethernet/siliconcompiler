@@ -77,7 +77,7 @@ set sc_libtype      [dict get $sc_cfg library $sc_mainlib asic libarch]
 set sc_site         [lindex [dict get $sc_cfg library $sc_mainlib asic site $sc_libtype] 0]
 set sc_filler       [dict get $sc_cfg library $sc_mainlib asic cells filler]
 set sc_dontuse      [dict get $sc_cfg library $sc_mainlib asic cells dontuse]
-set sc_clkbuf       [lindex [dict get $sc_cfg library $sc_mainlib asic cells clkbuf] end]
+set sc_clkbuf       [lindex [dict get $sc_cfg tool $sc_tool task $sc_task {var} cts_clock_buffer] 0]
 set sc_filler       [dict get $sc_cfg library $sc_mainlib asic cells filler]
 set sc_tap          [dict get $sc_cfg library $sc_mainlib asic cells tap]
 set sc_endcap       [dict get $sc_cfg library $sc_mainlib asic cells endcap]
@@ -237,6 +237,8 @@ set openroad_cts_balance_levels [lindex [dict get $sc_cfg tool $sc_tool task $sc
 
 set openroad_ant_iterations [lindex [dict get $sc_cfg tool $sc_tool task $sc_task {var} ant_iterations] 0]
 set openroad_ant_margin [lindex [dict get $sc_cfg tool $sc_tool task $sc_task {var} ant_margin] 0]
+set openroad_ant_check [lindex [dict get $sc_cfg tool $sc_tool task $sc_task {var} ant_check] 0]
+set openroad_ant_repair [lindex [dict get $sc_cfg tool $sc_tool task $sc_task {var} ant_repair] 0]
 
 set openroad_grt_use_pin_access [lindex [dict get $sc_cfg tool $sc_tool task $sc_task {var} grt_use_pin_access] 0]
 set openroad_grt_overflow_iter [lindex [dict get $sc_cfg tool $sc_tool task $sc_task {var} grt_overflow_iter] 0]
@@ -332,6 +334,7 @@ if {$sc_task != "floorplan"} {
       utl::warn FLW 1 "Missing global routing adjustment for ${layername}"
     } else {
       set adjustment [lindex [dict get $sc_cfg pdk $sc_pdk {var} $sc_tool "${layername}_adjustment" $sc_stackup] 0]
+      utl::info FLW 1 "Setting global routing adjustment for $layername to [expr $adjustment * 100]%"
       set_global_routing_layer_adjustment $layername $adjustment
     }
   }

@@ -1,7 +1,7 @@
 {
   "openroad": {
     "git-url": "https://github.com/The-OpenROAD-Project/OpenROAD.git",
-    "git-commit": "b2fabb1b426267845571a27221ce779d8543f212",
+    "git-commit": "aa1f8060d856733b82678802809c57bb260b3aac",
     "docker-cmds": [
       "RUN cp $SC_BUILD/DependencyInstaller.sh $SC_PREFIX/openroad_runtime.sh"
     ],
@@ -9,7 +9,7 @@
   },
   "surelog": {
     "git-url": "https://github.com/chipsalliance/Surelog.git",
-    "git-commit": "d8bf62faf7888a947862b3e44bdc38bdf967495b",
+    "git-commit": "654b45eb0aaac1ce7f7dc1289c83c747b02b5878",
     "auto-update": true
   },
   "netgen": {
@@ -40,7 +40,7 @@
   },
   "sv2v": {
     "git-url": "https://github.com/zachjs/sv2v.git",
-    "git-commit": "c822d2e8c6806eab28a5c54cdab9f3aa4d7660bd",
+    "git-commit": "6c4ee8f4bc399262fe0ea2e0873538dcdae23aa7",
     "auto-update": true
   },
   "verilator": {
@@ -80,7 +80,7 @@
   },
   "yosys": {
     "git-url": "https://github.com/YosysHQ/yosys.git",
-    "git-commit": "cee3cb31b98e3b67af3165969c8cfc0616c37e19",
+    "git-commit": "d82bae32bee63d4a521e5cb081359aa5a35213f1",
     "auto-update": true
   },
   "slurm": {

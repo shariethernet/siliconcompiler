@@ -43,13 +43,13 @@ def test_sc_show_design_only(flags, monkeypatch, heartbeat_dir):
     # We have separate tests in test/core/test_show.py that handle these
     # complications and test this function itself, so there's no need to
     # run it here.
-    def fake_show(chip, filename):
+    def fake_show(chip, filename, extension=None):
         # when only -design is provided the filename will not be available
         assert not filename
 
         pdkname = chip.get('option', 'pdk')
         sc_stackup = chip.get('pdk', pdkname, 'stackup')[0]
-        tech_file = chip.get('pdk', pdkname, 'layermap', 'klayout', 'def', 'gds', sc_stackup)[0]
+        tech_file = chip.get('pdk', pdkname, 'layermap', 'klayout', 'def', 'klayout', sc_stackup)[0]
         assert tech_file is not None
 
         chip.logger.info(f'Showing {chip.design}')
@@ -78,7 +78,7 @@ def test_sc_show(flags, monkeypatch, heartbeat_dir):
     # We have separate tests in test/core/test_show.py that handle these
     # complications and test this function itself, so there's no need to
     # run it here.
-    def fake_show(chip, filename):
+    def fake_show(chip, filename, extension=None):
         # Test basic conditions required for chip.show() to work, to make sure
         # that the sc-show app set up the chip object correctly.
         assert os.path.exists(filename)
@@ -88,7 +88,7 @@ def test_sc_show(flags, monkeypatch, heartbeat_dir):
 
         pdkname = chip.get('option', 'pdk')
         sc_stackup = chip.get('pdk', pdkname, 'stackup')[0]
-        tech_file = chip.get('pdk', pdkname, 'layermap', 'klayout', 'def', 'gds', sc_stackup)[0]
+        tech_file = chip.get('pdk', pdkname, 'layermap', 'klayout', 'def', 'klayout', sc_stackup)[0]
         assert tech_file is not None
 
         chip.logger.info('Showing ' + filename)
