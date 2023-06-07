@@ -37,7 +37,7 @@ def setup(chip):
 # Pre-process
 ################################
 def pre_process(chip):
-    # bsc requires its output directory exists before being called.
+    # TLV requires its output directory exists before being called.
     if os.path.isdir(VLOG_DIR):
         shutil.rmtree(VLOG_DIR)
     os.makedirs(VLOG_DIR)
